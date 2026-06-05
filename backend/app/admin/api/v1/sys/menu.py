@@ -62,9 +62,7 @@ async def update_menu(
     db: CurrentSessionTransaction, pk: Annotated[int, Path(description='菜单 ID')], obj: UpdateMenuParam
 ) -> ResponseModel:
     count = await menu_service.update(db=db, pk=pk, obj=obj)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.delete(
@@ -77,6 +75,4 @@ async def update_menu(
 )
 async def delete_menu(db: CurrentSessionTransaction, pk: Annotated[int, Path(description='菜单 ID')]) -> ResponseModel:
     count = await menu_service.delete(db=db, pk=pk)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)

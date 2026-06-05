@@ -23,9 +23,7 @@ class GenBusinessService:
         :return:
         """
 
-        business = await gen_business_dao.get(db, pk)
-        if not business:
-            raise errors.NotFoundError(msg='代码生成业务不存在')
+        business = errors.require_found(await gen_business_dao.get(db, pk), msg='代码生成业务不存在')
         return business
 
     @staticmethod
@@ -77,9 +75,7 @@ class GenBusinessService:
         :return:
         """
 
-        business = await gen_business_dao.get(db, pk)
-        if not business:
-            raise errors.NotFoundError(msg='代码生成业务不存在')
+        business = errors.require_found(await gen_business_dao.get(db, pk), msg='代码生成业务不存在')
         if business.table_name != obj.table_name and await gen_business_dao.get_by_name(db, obj.table_name):
             raise errors.ConflictError(msg='代码生成业务已存在')
         return await gen_business_dao.update(db, pk, obj)
@@ -94,9 +90,7 @@ class GenBusinessService:
         :return:
         """
 
-        business = await gen_business_dao.get(db, pk)
-        if not business:
-            raise errors.NotFoundError(msg='代码生成业务不存在')
+        business = errors.require_found(await gen_business_dao.get(db, pk), msg='代码生成业务不存在')
         return await gen_business_dao.delete(db, pk)
 
 

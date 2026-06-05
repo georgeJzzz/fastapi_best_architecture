@@ -23,7 +23,7 @@ from starlette.concurrency import run_in_threadpool
 from watchfiles import Change, PythonFilter
 
 from backend import __version__
-from backend.common.enums import DataBaseType, PrimaryKeyType
+from backend.common.enums import DataBaseType, PluginType, PrimaryKeyType
 from backend.common.exception.errors import BaseExceptionError
 from backend.common.model import MappedBase
 from backend.core.conf import settings
@@ -44,13 +44,9 @@ from backend.database.db import (
     get_database_url,
 )
 from backend.database.redis import RedisCli, redis_client
-from backend.plugin.core import (
-    get_plugins,
-    get_required_plugins,
-)
-from backend.plugin.installer import install_git_frontend_plugin, install_git_plugin, install_zip_plugin, zip_plugin
+from backend.plugin.installer import install_git_frontend_plugin, zip_plugin
 from backend.plugin.installer import remove_plugin as _remove_plugin
-from backend.plugin.requirements import uninstall_requirements_async
+from backend.plugin import plugin_lifecycle
 from backend.plugin.sql import build_sql_filename, get_plugin_destroy_sql, get_plugin_sql
 from backend.utils.console import console
 from backend.utils.dynamic_import import import_module_cached
@@ -238,7 +234,7 @@ async def init(db: AsyncSession, redis: RedisCli) -> None:
     panel_content.append(f'{settings.REDIS_HOST}:{settings.REDIS_PORT}', style='yellow')
     panel_content.append('\n  • 数据库：')
     panel_content.append(f'{settings.REDIS_DATABASE}', style='yellow')
-    plugins = get_plugins()
+    plugins = plugin_lifecycle.discover()
     panel_content.append('\n\n【已安装插件】', style='bold green')
     panel_content.append('\n\n  • ')
     if plugins:
@@ -299,7 +295,7 @@ def run(host: str, port: int, reload: bool, workers: int) -> None:  # noqa: FBT0
     env_style = 'yellow' if settings.ENVIRONMENT == 'dev' else 'green'
     panel_content.append(f'{settings.ENVIRONMENT.upper()}', style=env_style)
 
-    plugins = get_plugins()
+    plugins = plugin_lifecycle.discover()
     panel_content.append('\n已安装插件：', style='bold green')
     if plugins:
         panel_content.append(f'{", ".join(plugins)}', style='yellow')
@@ -316,7 +312,7 @@ def run(host: str, port: int, reload: bool, workers: int) -> None:  # noqa: FBT0
 
     console.print(Panel(panel_content, title=f'fba (v{__version__})', border_style='purple', padding=(1, 2)))
     granian.Granian(
-        target='backend.main:app',
+        target='backend.prepared_main:app',
         interface='asgi',
         address=host,
         port=port,
@@ -388,9 +384,9 @@ async def install_plugin(  # noqa: C901
             raise cappa.Exit('path 和 repo_url 不能同时指定', code=1)
 
         if path:
-            plugin_name = await install_zip_plugin(file=path)
+            plugin_name = await plugin_lifecycle.install_backend(type=PluginType.zip, file=path)
         if repo_url:
-            plugin_name = await install_git_plugin(repo_url=repo_url)
+            plugin_name = await plugin_lifecycle.install_backend(type=PluginType.git, repo_url=repo_url)
 
         console.tip(f'插件 {plugin_name} 安装成功')
 
@@ -437,19 +433,21 @@ async def remove_plugin(plugin: str | None, *, no_sql: bool = False) -> None:  #
                 console.warning(f'插件 {plugin} 未提供销毁 SQL 脚本，跳过数据库清理')
 
         console.note(f'正在卸载插件 {plugin} 依赖...')
-        await uninstall_requirements_async(plugin)
+        await plugin_lifecycle.uninstall_requirements(plugin)
 
         console.note(f'正在备份插件 {plugin}...')
         backup_file = PLUGIN_DIR / f'{plugin}.{timezone.now().strftime("%Y%m%d%H%M%S")}.backup.zip'
         await run_in_threadpool(zip_plugin, plugin_dir, backup_file)
         await run_in_threadpool(_remove_plugin, plugin_dir)
+        await plugin_lifecycle.mark_changed()
+        plugin_lifecycle.clear_cache()
 
         console.note(f'备份文件：{backup_file}')
         console.tip(f'插件 {plugin} 卸载成功')
         console.print()
         console.warning('请根据插件说明（README.md）移除相关配置并重启服务')
 
-    plugins = get_plugins()
+    plugins = plugin_lifecycle.discover()
     if not plugins:
         raise cappa.Exit('当前没有已安装的插件', code=1)
 
@@ -468,7 +466,7 @@ async def remove_plugin(plugin: str | None, *, no_sql: bool = False) -> None:  #
         if plugin not in plugins:
             raise cappa.Exit(f'插件 {plugin} 不存在', code=1)
 
-    if plugin in get_required_plugins():
+    if plugin in plugin_lifecycle.get_required():
         raise cappa.Exit(f'插件 {plugin} 为必需插件，禁止卸载', code=1)
 
     try:
@@ -490,7 +488,7 @@ async def get_sql_scripts() -> list[str]:
     if await anyio.Path(main_sql_file).exists():
         sql_scripts.append(str(main_sql_file))
 
-    for plugin in get_plugins():
+    for plugin in plugin_lifecycle.discover():
         plugin_sql = await get_plugin_sql(plugin, settings.DATABASE_TYPE, settings.DATABASE_PK_MODE)
         if plugin_sql:
             sql_scripts.append(plugin_sql)

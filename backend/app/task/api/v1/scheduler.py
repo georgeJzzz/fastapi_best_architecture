@@ -77,9 +77,7 @@ async def update_task_scheduler(
     obj: UpdateTaskSchedulerParam,
 ) -> ResponseModel:
     count = await task_scheduler_service.update(db=db, pk=pk, obj=obj)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.put(
@@ -94,9 +92,7 @@ async def update_task_scheduler_status(
     db: CurrentSessionTransaction, pk: Annotated[int, Path(description='任务调度 ID')]
 ) -> ResponseModel:
     count = await task_scheduler_service.update_status(db=db, pk=pk)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.delete(
@@ -111,9 +107,7 @@ async def delete_task_scheduler(
     db: CurrentSessionTransaction, pk: Annotated[int, Path(description='任务调度 ID')]
 ) -> ResponseModel:
     count = await task_scheduler_service.delete(db=db, pk=pk)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.post(

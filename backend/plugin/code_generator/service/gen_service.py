@@ -57,9 +57,7 @@ class GenService:
         if settings.ENVIRONMENT != 'dev':
             raise errors.ForbiddenError(msg='禁止在非开发环境下导入代码生成业务')
 
-        table_info = await gen_dao.get_table(db, obj.table_schema, obj.table_name)
-        if not table_info:
-            raise errors.NotFoundError(msg='数据库表不存在')
+        table_info = errors.require_found(await gen_dao.get_table(db, obj.table_schema, obj.table_name), msg='数据库表不存在')
 
         business_info = await gen_business_dao.get_by_name(db, obj.table_name)
         if business_info:
@@ -117,9 +115,7 @@ class GenService:
         :param business: 业务对象
         :return:
         """
-        gen_models = await gen_column_service.get_columns(db=db, business_id=business.id)
-        if not gen_models:
-            raise errors.NotFoundError(msg='代码生成模型表为空')
+        gen_models = errors.require_found(await gen_column_service.get_columns(db=db, business_id=business.id), msg='代码生成模型表为空')
 
         gen_vars = gen_template.get_vars(business, gen_models)
         template_mapping = gen_template.get_template_path_mapping(business)
@@ -176,9 +172,7 @@ class GenService:
         :param pk: 业务 ID
         :return:
         """
-        business = await gen_business_dao.get(db, pk)
-        if not business:
-            raise errors.NotFoundError(msg='业务不存在')
+        business = errors.require_found(await gen_business_dao.get(db, pk), msg='业务不存在')
 
         codes = {}
         backend_path = 'fastapi-best-architecture/backend/app/'
@@ -206,9 +200,7 @@ class GenService:
         :param pk: 业务 ID
         :return:
         """
-        business = await gen_business_dao.get(db, pk)
-        if not business:
-            raise errors.NotFoundError(msg='业务不存在')
+        business = errors.require_found(await gen_business_dao.get(db, pk), msg='业务不存在')
 
         gen_path = business.gen_path or '<project_root>/backend/app'
         paths = []
@@ -232,9 +224,7 @@ class GenService:
         if settings.ENVIRONMENT != 'dev':
             raise errors.ForbiddenError(msg='禁止在非开发环境下生成代码')
 
-        business = await gen_business_dao.get(db, pk)
-        if not business:
-            raise errors.NotFoundError(msg='业务不存在')
+        business = errors.require_found(await gen_business_dao.get(db, pk), msg='业务不存在')
 
         gen_path = business.gen_path or str(BASE_PATH / 'app')
 
@@ -274,9 +264,7 @@ class GenService:
         :param pk: 业务 ID
         :return:
         """
-        business = await gen_business_dao.get(db, pk)
-        if not business:
-            raise errors.NotFoundError(msg='业务不存在')
+        business = errors.require_found(await gen_business_dao.get(db, pk), msg='业务不存在')
 
         all_files = {}
         init_files = gen_template.get_init_files(business)

@@ -29,9 +29,7 @@ class TaskSchedulerService:
         :return:
         """
 
-        task_scheduler = await task_scheduler_dao.get(db, pk)
-        if not task_scheduler:
-            raise errors.NotFoundError(msg='任务调度不存在')
+        task_scheduler = errors.require_found(await task_scheduler_dao.get(db, pk), msg='任务调度不存在')
         return task_scheduler
 
     @staticmethod
@@ -87,9 +85,7 @@ class TaskSchedulerService:
         :return:
         """
 
-        task_scheduler = await task_scheduler_dao.get(db, pk)
-        if not task_scheduler:
-            raise errors.NotFoundError(msg='任务调度不存在')
+        task_scheduler = errors.require_found(await task_scheduler_dao.get(db, pk), msg='任务调度不存在')
         if task_scheduler.name != obj.name and await task_scheduler_dao.get_by_name(db, obj.name):
             raise errors.ConflictError(msg='任务调度已存在')
         if obj.type == TaskSchedulerType.CRONTAB:
@@ -107,9 +103,7 @@ class TaskSchedulerService:
         :return:
         """
 
-        task_scheduler = await task_scheduler_dao.get(db, pk)
-        if not task_scheduler:
-            raise errors.NotFoundError(msg='任务调度不存在')
+        task_scheduler = errors.require_found(await task_scheduler_dao.get(db, pk), msg='任务调度不存在')
         count = await task_scheduler_dao.set_status(db, pk, status=not task_scheduler.enabled)
         return count
 
@@ -123,9 +117,7 @@ class TaskSchedulerService:
         :return:
         """
 
-        task_scheduler = await task_scheduler_dao.get(db, pk)
-        if not task_scheduler:
-            raise errors.NotFoundError(msg='任务调度不存在')
+        task_scheduler = errors.require_found(await task_scheduler_dao.get(db, pk), msg='任务调度不存在')
         count = await task_scheduler_dao.delete(db, pk)
         return count
 
@@ -142,9 +134,7 @@ class TaskSchedulerService:
         workers = await run_in_threadpool(celery_app.control.ping, timeout=0.5)
         if not workers:
             raise errors.ServerError(msg='Celery Worker 暂不可用，请稍后重试')
-        task_scheduler = await task_scheduler_dao.get(db, pk)
-        if not task_scheduler:
-            raise errors.NotFoundError(msg='任务调度不存在')
+        task_scheduler = errors.require_found(await task_scheduler_dao.get(db, pk), msg='任务调度不存在')
         try:
             args = json.loads(task_scheduler.args) if task_scheduler.args else None
             kwargs = json.loads(task_scheduler.kwargs) if task_scheduler.kwargs else None

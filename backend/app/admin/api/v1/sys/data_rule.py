@@ -99,9 +99,7 @@ async def update_data_rule(
     obj: UpdateDataRuleParam,
 ) -> ResponseModel:
     count = await data_rule_service.update(db=db, pk=pk, obj=obj)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.delete(
@@ -114,6 +112,4 @@ async def update_data_rule(
 )
 async def delete_data_rules(db: CurrentSessionTransaction, obj: DeleteDataRuleParam) -> ResponseModel:
     count = await data_rule_service.delete(db=db, obj=obj)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)

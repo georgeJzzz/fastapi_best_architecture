@@ -33,9 +33,7 @@ class DataRuleService:
         :return:
         """
 
-        data_rule = await data_rule_dao.get(db, pk)
-        if not data_rule:
-            raise errors.NotFoundError(msg='数据规则不存在')
+        data_rule = errors.require_found(await data_rule_dao.get(db, pk), msg='数据规则不存在')
         return data_rule
 
     @staticmethod
@@ -130,9 +128,7 @@ class DataRuleService:
         :param obj: 规则更新参数
         :return:
         """
-        data_rule = await data_rule_dao.get(db, pk)
-        if not data_rule:
-            raise errors.NotFoundError(msg='数据规则不存在')
+        data_rule = errors.require_found(await data_rule_dao.get(db, pk), msg='数据规则不存在')
         if data_rule.name != obj.name and await data_rule_dao.get_by_name(db, obj.name):
             raise errors.ConflictError(msg='数据规则已存在')
         count = await data_rule_dao.update(db, pk, obj)

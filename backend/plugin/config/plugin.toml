@@ -10,5 +10,5 @@ database = ["mysql", "postgresql"]
 extend = "admin"
 
 [api.config]
-prefix = "/configs"
+prefix = "/sys/configs"
 tags = "系统参数配置"

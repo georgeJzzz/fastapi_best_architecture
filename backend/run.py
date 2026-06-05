@@ -12,7 +12,7 @@ if __name__ == '__main__':
     # 1. 按照官方文档通过 uv 安装依赖
     # 2. 命令行空间位于 backend 目录下
     granian.Granian(
-        target='main:app',
+        target='prepared_main:app',
         interface='asgi',
         address='127.0.0.1',
         port=8000,

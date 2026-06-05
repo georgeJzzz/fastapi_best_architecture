@@ -23,9 +23,7 @@ class NoticeService:
         :return:
         """
 
-        notice = await notice_dao.get(db, pk)
-        if not notice:
-            raise errors.NotFoundError(msg='通知公告不存在')
+        notice = errors.require_found(await notice_dao.get(db, pk), msg='通知公告不存在')
         return notice
 
     @staticmethod
@@ -77,9 +75,7 @@ class NoticeService:
         :return:
         """
 
-        notice = await notice_dao.get(db, pk)
-        if not notice:
-            raise errors.NotFoundError(msg='通知公告不存在')
+        notice = errors.require_found(await notice_dao.get(db, pk), msg='通知公告不存在')
         count = await notice_dao.update(db, pk, obj)
         return count
 

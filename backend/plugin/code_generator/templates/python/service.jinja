@@ -19,9 +19,7 @@ class {{ class_name }}Service:
         :param pk: {{ doc_comment }} ID
         :return:
         """
-        {{ table_name }} = await {{ table_name }}_dao.get(db, pk)
-        if not {{ table_name }}:
-            raise errors.NotFoundError(msg='{{ doc_comment }}不存在')
+        {{ table_name }} = errors.require_found(await {{ table_name }}_dao.get(db, pk), msg='{{ doc_comment }}不存在')
         return {{ table_name }}
 
     @staticmethod

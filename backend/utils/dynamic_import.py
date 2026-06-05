@@ -68,6 +68,6 @@ def get_app_models() -> list[object]:
 @lru_cache(256)
 def get_all_models() -> tuple[object, ...]:
     """获取所有模型类"""
-    from backend.plugin.core import get_plugin_models
+    from backend.plugin import plugin_lifecycle
 
-    return tuple(get_app_models() + get_plugin_models())
+    return tuple(get_app_models() + plugin_lifecycle.models())

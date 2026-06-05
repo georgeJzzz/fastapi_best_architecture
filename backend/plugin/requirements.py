@@ -13,7 +13,6 @@ from starlette.concurrency import run_in_threadpool
 
 from backend.core.conf import settings
 from backend.core.path_conf import PLUGIN_DIR
-from backend.plugin.core import get_plugins
 from backend.plugin.errors import PluginInstallError
 
 
@@ -78,7 +77,12 @@ def install_requirements(plugin: str | None) -> None:  # noqa: C901
     :param plugin: 指定插件名，否则检查所有插件
     :return:
     """
-    plugins = [plugin] if plugin else get_plugins()
+    if plugin is None:
+        from backend.plugin import plugin_lifecycle
+
+        plugins = plugin_lifecycle.discover()
+    else:
+        plugins = [plugin]
 
     for plugin in plugins:
         requirements_file = PLUGIN_DIR / plugin / 'requirements.txt'

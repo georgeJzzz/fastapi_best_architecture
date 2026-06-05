@@ -96,9 +96,7 @@ async def update_role(
     db: CurrentSessionTransaction, pk: Annotated[int, Path(description='角色 ID')], obj: UpdateRoleParam
 ) -> ResponseModel:
     count = await role_service.update(db=db, pk=pk, obj=obj)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.put(
@@ -115,9 +113,7 @@ async def update_role_menus(
     menu_ids: UpdateRoleMenuParam,
 ) -> ResponseModel:
     count = await role_service.update_role_menu(db=db, pk=pk, menu_ids=menu_ids)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.put(
@@ -134,9 +130,7 @@ async def update_role_scopes(
     scope_ids: UpdateRoleScopeParam,
 ) -> ResponseModel:
     count = await role_service.update_role_scope(db=db, pk=pk, scope_ids=scope_ids)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.delete(
@@ -149,6 +143,4 @@ async def update_role_scopes(
 )
 async def delete_roles(db: CurrentSessionTransaction, obj: DeleteRoleParam) -> ResponseModel:
     count = await role_service.delete(db=db, obj=obj)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)

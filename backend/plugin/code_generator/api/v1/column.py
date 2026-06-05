@@ -56,9 +56,7 @@ async def update_column(
     db: CurrentSessionTransaction, pk: Annotated[int, Path(description='模型列 ID')], obj: UpdateGenColumnParam
 ) -> ResponseModel:
     count = await gen_column_service.update(db=db, pk=pk, obj=obj)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.delete(
@@ -73,6 +71,4 @@ async def delete_column(
     db: CurrentSessionTransaction, pk: Annotated[int, Path(description='模型列 ID')]
 ) -> ResponseModel:
     count = await gen_column_service.delete(db=db, pk=pk)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)

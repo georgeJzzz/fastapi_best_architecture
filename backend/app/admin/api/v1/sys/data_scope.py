@@ -89,9 +89,7 @@ async def update_data_scope(
     obj: UpdateDataScopeParam,
 ) -> ResponseModel:
     count = await data_scope_service.update(db=db, pk=pk, obj=obj)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.put(
@@ -108,9 +106,7 @@ async def update_data_scope_rules(
     rule_ids: UpdateDataScopeRuleParam,
 ) -> ResponseModel:
     count = await data_scope_service.update_data_scope_rule(db=db, pk=pk, rule_ids=rule_ids)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.delete(
@@ -123,6 +119,4 @@ async def update_data_scope_rules(
 )
 async def delete_data_scopes(db: CurrentSessionTransaction, obj: DeleteDataScopeParam) -> ResponseModel:
     count = await data_scope_service.delete(db=db, obj=obj)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)

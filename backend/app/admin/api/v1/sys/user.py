@@ -80,9 +80,7 @@ async def update_user(
     obj: UpdateUserParam,
 ) -> ResponseModel:
     count = await user_service.update(db=db, pk=pk, obj=obj)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.put('/{pk}/permissions', summary='更新用户权限', dependencies=[DependsSuperUser])
@@ -93,9 +91,7 @@ async def update_user_permission(
     type: Annotated[UserPermissionType, Query(description='权限类型')],
 ) -> ResponseModel:
     count = await user_service.update_permission(db=db, request=request, pk=pk, type=type)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.put('/me/password', summary='更新当前用户密码', dependencies=[DependsJwtAuth])
@@ -103,9 +99,7 @@ async def update_user_password(
     db: CurrentSessionTransaction, request: Request, obj: ResetPasswordParam
 ) -> ResponseModel:
     count = await user_service.update_password(db=db, user_id=request.user.id, obj=obj)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.put('/{pk}/password', summary='重置用户密码', dependencies=[DependsSuperUser])
@@ -115,9 +109,7 @@ async def reset_user_password(
     password: Annotated[str, Body(embed=True, description='新密码')],
 ) -> ResponseModel:
     count = await user_service.reset_password(db=db, pk=pk, password=password)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.put('/me/nickname', summary='更新当前用户昵称', dependencies=[DependsJwtAuth])
@@ -127,9 +119,7 @@ async def update_user_nickname(
     nickname: Annotated[str, Body(embed=True, description='用户昵称')],
 ) -> ResponseModel:
     count = await user_service.update_nickname(db=db, user_id=request.user.id, nickname=nickname)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.put('/me/avatar', summary='更新当前用户头像', dependencies=[DependsJwtAuth])
@@ -139,9 +129,7 @@ async def update_user_avatar(
     avatar: Annotated[str, Body(embed=True, description='用户头像地址')],
 ) -> ResponseModel:
     count = await user_service.update_avatar(db=db, user_id=request.user.id, avatar=avatar)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.put('/me/email', summary='更新当前用户邮箱', dependencies=[DependsJwtAuth])
@@ -152,9 +140,7 @@ async def update_user_email(
     email: Annotated[str, Body(embed=True, description='用户邮箱')],
 ) -> ResponseModel:
     count = await user_service.update_email(db=db, user_id=request.user.id, captcha=captcha, email=email)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.delete(
@@ -167,6 +153,4 @@ async def update_user_email(
 )
 async def delete_user(db: CurrentSessionTransaction, pk: Annotated[int, Path(description='用户 ID')]) -> ResponseModel:
     count = await user_service.delete(db=db, pk=pk)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)

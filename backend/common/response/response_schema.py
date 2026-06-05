@@ -143,6 +143,17 @@ class ResponseBase:
         """
         return self.__response(res=res, data=data)
 
+    def success_by_count(self, count: int) -> ResponseModel:
+        """
+        根据数据库受影响行数返回成功或失败响应
+
+        :param count: 数据库受影响行数
+        :return:
+        """
+        if count > 0:
+            return self.success()
+        return self.fail()
+
     @staticmethod
     def fast_success(
         *,

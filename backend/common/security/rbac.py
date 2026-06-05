@@ -5,6 +5,7 @@ from backend.common.enums import MethodType, StatusType
 from backend.common.exception import errors
 from backend.common.security.jwt import DependsJwtAuth
 from backend.core.conf import settings
+from backend.plugin import plugin_features
 
 
 async def rbac_verify(request: Request, _token: str = DependsJwtAuth) -> None:  # noqa: C901
@@ -73,13 +74,7 @@ async def rbac_verify(request: Request, _token: str = DependsJwtAuth) -> None:  
         if path_auth_perm not in allow_perms:
             raise errors.AuthorizationError
     else:
-        # casbin 模式
-        try:
-            from backend.plugin.casbin_rbac.rbac import casbin_verify
-        except ImportError:
-            raise errors.ServerError(msg='Casbin RBAC 插件用法导入失败，请联系系统管理员')
-
-        await casbin_verify(request)
+        await plugin_features.casbin_verify(request)
 
 
 # RBAC 授权依赖注入

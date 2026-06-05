@@ -23,9 +23,7 @@ class DictTypeService:
         :return:
         """
 
-        dict_type = await dict_type_dao.get(db, pk)
-        if not dict_type:
-            raise errors.NotFoundError(msg='字典类型不存在')
+        dict_type = errors.require_found(await dict_type_dao.get(db, pk), msg='字典类型不存在')
         return dict_type
 
     @staticmethod
@@ -78,9 +76,7 @@ class DictTypeService:
         :return:
         """
 
-        dict_type = await dict_type_dao.get(db, pk)
-        if not dict_type:
-            raise errors.NotFoundError(msg='字典类型不存在')
+        dict_type = errors.require_found(await dict_type_dao.get(db, pk), msg='字典类型不存在')
         if dict_type.code != obj.code and await dict_type_dao.get_by_code(db, obj.code):
             raise errors.ConflictError(msg='字典类型已存在')
         count = await dict_type_dao.update(db, pk, obj)

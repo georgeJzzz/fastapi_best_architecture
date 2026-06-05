@@ -1,5 +1,3 @@
-import json
-
 from typing import Any
 
 from fast_captcha import text_captcha
@@ -9,17 +7,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.admin.crud.crud_user import user_dao
 from backend.app.admin.schema.token import GetLoginToken
 from backend.app.admin.schema.user import AddOAuth2UserParam
+from backend.app.admin.session import (
+    ResponseCookieAdapter,
+    UserSessionContext,
+    UserSessionUser,
+    user_session_manager,
+)
+from backend.app.admin.service.login_captcha_service import login_captcha_service
 from backend.app.admin.service.login_log_service import login_log_service
 from backend.common.context import ctx
 from backend.common.enums import LoginLogStatusType
 from backend.common.exception import errors
 from backend.common.i18n import t
-from backend.common.security import jwt
-from backend.core.conf import settings
-from backend.database.redis import redis_client
 from backend.plugin.oauth2.crud.crud_user_social import user_social_dao
 from backend.plugin.oauth2.enums import UserSocialAuthType, UserSocialType
 from backend.plugin.oauth2.schema.user_social import CreateUserSocialParam
+from backend.plugin.oauth2.service.oauth2_state_service import oauth2_state_service
 from backend.plugin.oauth2.service.user_social_service import user_social_service
 from backend.utils.timezone import timezone
 
@@ -93,26 +96,13 @@ class OAuth2Service:
             new_user_social = CreateUserSocialParam(sid=sid, source=source.value, user_id=sys_user.id)
             await user_social_dao.create(db, new_user_social)
 
-        # 创建 token
-        access_token_data = await jwt.create_access_token(
-            sys_user.id,
-            multi_login=sys_user.is_multi_login,
-            # extra info
-            username=sys_user.username,
-            nickname=sys_user.nickname,
-            last_login_time=timezone.to_str(timezone.now()),
-            ip=ctx.ip,
-            os=ctx.os,
-            browser=ctx.browser,
-            device=ctx.device,
-        )
-        refresh_token_data = await jwt.create_refresh_token(
-            access_token_data.session_uuid,
-            sys_user.id,
-            multi_login=sys_user.is_multi_login,
-        )
         await user_dao.update_login_time(db, sys_user.username)
         await db.refresh(sys_user)
+        session_tokens = await user_session_manager.create(
+            UserSessionUser.from_user(sys_user),
+            context=UserSessionContext.from_current_request(),
+            cookie=ResponseCookieAdapter(response),
+        )
         background_tasks.add_task(
             login_log_service.create,
             user_uuid=sys_user.uuid,
@@ -121,18 +111,11 @@ class OAuth2Service:
             status=LoginLogStatusType.success.value,
             msg=t('success.login.oauth2_success'),
         )
-        await redis_client.delete(f'{settings.LOGIN_CAPTCHA_REDIS_PREFIX}:{ctx.ip}')
-        response.set_cookie(
-            key=settings.COOKIE_REFRESH_TOKEN_KEY,
-            value=refresh_token_data.refresh_token,
-            max_age=settings.COOKIE_REFRESH_TOKEN_EXPIRE_SECONDS,
-            expires=timezone.to_utc(refresh_token_data.refresh_token_expire_time),
-            httponly=True,
-        )
+        await login_captcha_service.discard(ctx.ip)
         data = GetLoginToken(
-            access_token=access_token_data.access_token,
-            access_token_expire_time=access_token_data.access_token_expire_time,
-            session_uuid=access_token_data.session_uuid,
+            access_token=session_tokens.access_token,
+            access_token_expire_time=session_tokens.access_token_expire_time,
+            session_uuid=session_tokens.session_uuid,
             user=sys_user,  # type: ignore
         )
         return data
@@ -178,15 +161,7 @@ class OAuth2Service:
             case _:
                 raise errors.ForbiddenError(msg=f'暂不支持 {social} OAuth2 登录')
 
-        if not state:
-            raise errors.ForbiddenError(msg='OAuth2 状态信息缺失')
-
-        state_data = await redis_client.get(f'{settings.OAUTH2_STATE_REDIS_PREFIX}:{state}')
-        if not state_data:
-            raise errors.ForbiddenError(msg='OAuth2 状态信息无效或缺失')
-
-        state_info = json.loads(state_data)
-        await redis_client.delete(f'{settings.OAUTH2_STATE_REDIS_PREFIX}:{state}')
+        state_info = await oauth2_state_service.consume(state)
 
         # 绑定流程
         if state_info.get('type') == UserSocialAuthType.binding.value:

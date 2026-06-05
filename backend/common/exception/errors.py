@@ -1,9 +1,11 @@
-from typing import Any
+from typing import Any, TypeVar
 
 from fastapi import HTTPException
 from starlette.background import BackgroundTask
 
 from backend.common.response.response_code import CustomErrorCode, StandardResponseCode
+
+T = TypeVar('T')
 
 
 class BaseExceptionError(Exception):
@@ -65,6 +67,13 @@ class NotFoundError(BaseExceptionError):
 
     def __init__(self, *, msg: str = 'Not Found', data: Any = None, background: BackgroundTask | None = None) -> None:
         super().__init__(msg=msg, data=data, background=background)
+
+
+def require_found(value: T, *, msg: str = 'Not Found') -> T:
+    """要求资源存在，否则抛出资源不存在异常"""
+    if not value:
+        raise NotFoundError(msg=msg)
+    return value
 
 
 class ServerError(BaseExceptionError):

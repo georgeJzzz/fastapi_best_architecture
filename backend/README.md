@@ -1,5 +1,9 @@
 # FastAPI Best Architecture - Backend
 
+## Architecture Guide
+
+中文后端架构、目录 Tree、依赖包、CRUD 快速开发和调用流程请看 [Backend Architecture Guide](../docs/backend-architecture-guide.md)。
+
 ## Docker
 
 1. Make sure you're at the root of the project

@@ -29,9 +29,7 @@ class ConfigService:
         :param pk: 参数配置 ID
         :return:
         """
-        config = await config_dao.get(db, pk)
-        if not config:
-            raise errors.NotFoundError(msg='参数配置不存在')
+        config = errors.require_found(await config_dao.get(db, pk), msg='参数配置不存在')
         return config
 
     @staticmethod
@@ -85,9 +83,7 @@ class ConfigService:
         :param obj: 参数配置更新参数
         :return:
         """
-        config = await config_dao.get(db, pk)
-        if not config:
-            raise errors.NotFoundError(msg='参数配置不存在')
+        config = errors.require_found(await config_dao.get(db, pk), msg='参数配置不存在')
         if config.key != obj.key:
             config = await config_dao.get_by_key(db, obj.key)
             if config:

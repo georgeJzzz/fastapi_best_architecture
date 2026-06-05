@@ -25,10 +25,10 @@ from backend.app.admin.schema.user import (
     AddUserRoleParam,
     UpdateUserParam,
 )
-from backend.app.admin.utils.password_security import get_hash_password
+from backend.app.admin.service.user_password_policy import user_password_policy
 from backend.common.enums import StatusType
 from backend.common.exception import errors
-from backend.plugin.core import check_plugin_installed
+from backend.plugin import plugin_features
 from backend.utils.serializers import select_join_serialize
 from backend.utils.timezone import timezone
 
@@ -135,7 +135,7 @@ class CRUDUser(CRUDPlus[User]):
         :return:
         """
         salt = bcrypt.gensalt()
-        obj.password = get_hash_password(obj.password, salt)
+        obj.password = user_password_policy.hash(obj.password, salt=salt)
 
         dict_obj = obj.model_dump(exclude={'roles'})
         dict_obj.update({'salt': salt})
@@ -268,7 +268,7 @@ class CRUDUser(CRUDPlus[User]):
         :return:
         """
         salt = bcrypt.gensalt()
-        new_pwd = get_hash_password(password, salt)
+        new_pwd = user_password_policy.hash(password, salt=salt)
         return await self.update_model_by_column(db, {'password': new_pwd, 'salt': salt}, flush=True, id=pk, deleted=0)
 
     async def set_super(self, db: AsyncSession, user_id: int, *, is_super: bool) -> int:
@@ -323,13 +323,7 @@ class CRUDUser(CRUDPlus[User]):
         :param user_id: 用户 ID
         :return:
         """
-        if check_plugin_installed('oauth2'):
-            try:
-                from backend.plugin.oauth2.crud.crud_user_social import user_social_dao
-
-                await user_social_dao.delete_by_user_id(db, user_id)
-            except ImportError:
-                raise errors.ServerError(msg='OAuth2 插件用法导入失败，请联系系统管理员')
+        await plugin_features.delete_oauth2_bindings_by_user_id(db, user_id)
 
         user_role_stmt = delete(user_role).where(user_role.c.user_id == user_id)
         await db.execute(user_role_stmt)

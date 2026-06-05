@@ -26,9 +26,7 @@ class DictDataService:
         :param pk: 字典数据 ID
         :return:
         """
-        dict_data = await dict_data_dao.get(db, pk)
-        if not dict_data:
-            raise errors.NotFoundError(msg='字典数据不存在')
+        dict_data = errors.require_found(await dict_data_dao.get(db, pk), msg='字典数据不存在')
         return dict_data
 
     @staticmethod
@@ -44,9 +42,7 @@ class DictDataService:
         :param code: 字典类型编码
         :return:
         """
-        dict_datas = await dict_data_dao.get_by_type_code(db, code)
-        if not dict_datas:
-            raise errors.NotFoundError(msg='字典数据不存在')
+        dict_datas = errors.require_found(await dict_data_dao.get_by_type_code(db, code), msg='字典数据不存在')
         return dict_datas
 
     @staticmethod
@@ -100,9 +96,7 @@ class DictDataService:
         :param obj: 字典数据创建参数
         :return:
         """
-        dict_type = await dict_type_dao.get(db, obj.type_id)
-        if not dict_type:
-            raise errors.NotFoundError(msg='字典类型不存在')
+        dict_type = errors.require_found(await dict_type_dao.get(db, obj.type_id), msg='字典类型不存在')
         dict_data = await dict_data_dao.get_by_label_and_type_code(db, obj.label, dict_type.code)
         if dict_data:
             raise errors.ConflictError(msg='字典数据已存在')
@@ -119,12 +113,8 @@ class DictDataService:
         :param obj: 字典数据更新参数
         :return:
         """
-        dict_data = await dict_data_dao.get(db, pk)
-        if not dict_data:
-            raise errors.NotFoundError(msg='字典数据不存在')
-        dict_type = await dict_type_dao.get(db, obj.type_id)
-        if not dict_type:
-            raise errors.NotFoundError(msg='字典类型不存在')
+        dict_data = errors.require_found(await dict_data_dao.get(db, pk), msg='字典数据不存在')
+        dict_type = errors.require_found(await dict_type_dao.get(db, obj.type_id), msg='字典类型不存在')
         if dict_data.label != obj.label or dict_data.type_code != dict_type.code:
             new_dict_data = await dict_data_dao.get_by_label_and_type_code(db, obj.label, dict_type.code)
             if new_dict_data and new_dict_data.id != pk:

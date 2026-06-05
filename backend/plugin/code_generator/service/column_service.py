@@ -26,9 +26,7 @@ class GenColumnService:
         :return:
         """
 
-        column = await gen_column_dao.get(db, pk)
-        if not column:
-            raise errors.NotFoundError(msg='代码生成模型列不存在')
+        column = errors.require_found(await gen_column_dao.get(db, pk), msg='代码生成模型列不存在')
         if not await gen_business_dao.get(db, column.gen_business_id):
             raise errors.NotFoundError(msg='代码生成业务不存在')
         return column
@@ -88,9 +86,7 @@ class GenColumnService:
         :return:
         """
 
-        column = await gen_column_dao.get(db, pk)
-        if not column:
-            raise errors.NotFoundError(msg='代码生成模型列不存在')
+        column = errors.require_found(await gen_column_dao.get(db, pk), msg='代码生成模型列不存在')
         if not await gen_business_dao.get(db, column.gen_business_id):
             raise errors.NotFoundError(msg='代码生成业务不存在')
         if not await gen_business_dao.get(db, obj.gen_business_id):
@@ -113,9 +109,7 @@ class GenColumnService:
         :return:
         """
 
-        column = await gen_column_dao.get(db, pk)
-        if not column:
-            raise errors.NotFoundError(msg='代码生成模型列不存在')
+        column = errors.require_found(await gen_column_dao.get(db, pk), msg='代码生成模型列不存在')
         if not await gen_business_dao.get(db, column.gen_business_id):
             raise errors.NotFoundError(msg='代码生成业务不存在')
         return await gen_column_dao.delete(db, pk)

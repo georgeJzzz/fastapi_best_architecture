@@ -25,9 +25,7 @@ class MenuService:
         :return:
         """
 
-        menu = await menu_dao.get(db, menu_id=pk)
-        if not menu:
-            raise errors.NotFoundError(msg='菜单不存在')
+        menu = errors.require_found(await menu_dao.get(db, menu_id=pk), msg='菜单不存在')
         return menu
 
     @staticmethod
@@ -84,9 +82,7 @@ class MenuService:
         if title:
             raise errors.ConflictError(msg='菜单标题已存在')
         if obj.parent_id:
-            parent_menu = await menu_dao.get(db, obj.parent_id)
-            if not parent_menu:
-                raise errors.NotFoundError(msg='父级菜单不存在')
+            parent_menu = errors.require_found(await menu_dao.get(db, obj.parent_id), msg='父级菜单不存在')
         await menu_dao.create(db, obj)
 
     @staticmethod
@@ -100,15 +96,11 @@ class MenuService:
         :return:
         """
 
-        menu = await menu_dao.get(db, pk)
-        if not menu:
-            raise errors.NotFoundError(msg='菜单不存在')
+        menu = errors.require_found(await menu_dao.get(db, pk), msg='菜单不存在')
         if menu.title != obj.title and await menu_dao.get_by_title(db, obj.title):
             raise errors.ConflictError(msg='菜单标题已存在')
         if obj.parent_id:
-            parent_menu = await menu_dao.get(db, obj.parent_id)
-            if not parent_menu:
-                raise errors.NotFoundError(msg='父级菜单不存在')
+            parent_menu = errors.require_found(await menu_dao.get(db, obj.parent_id), msg='父级菜单不存在')
         if obj.parent_id == menu.id:
             raise errors.ForbiddenError(msg='禁止关联自身为父级')
         count = await menu_dao.update(db, pk, obj)

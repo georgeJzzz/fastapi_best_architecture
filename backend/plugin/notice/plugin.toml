@@ -10,5 +10,5 @@ database = ["mysql", "postgresql"]
 extend = "admin"
 
 [api.notice]
-prefix = "/notices"
+prefix = "/sys/notices"
 tags = "系统通知公告"

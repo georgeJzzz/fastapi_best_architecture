@@ -50,6 +50,4 @@ async def get_task_results_paginated(
 )
 async def delete_task_result(db: CurrentSessionTransaction, obj: DeleteTaskResultParam) -> ResponseModel:
     count = await task_result_service.delete(db=db, obj=obj)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)

@@ -87,9 +87,7 @@ async def update_business(
     obj: UpdateGenBusinessParam,
 ) -> ResponseModel:
     count = await gen_business_service.update(db=db, pk=pk, obj=obj)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.delete(
@@ -104,6 +102,4 @@ async def delete_business(
     db: CurrentSessionTransaction, pk: Annotated[int, Path(description='业务 ID')]
 ) -> ResponseModel:
     count = await gen_business_service.delete(db=db, pk=pk)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)

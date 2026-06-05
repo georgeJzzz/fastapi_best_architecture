@@ -43,9 +43,7 @@ async def get_opera_logs_paginated(
 )
 async def delete_opera_logs(db: CurrentSessionTransaction, obj: DeleteOperaLogParam) -> ResponseModel:
     count = await opera_log_service.delete(db=db, obj=obj)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    return response_base.success_by_count(count)
 
 
 @router.delete(

@@ -15,6 +15,7 @@ from backend.app.admin.schema.data_scope import (
 from backend.app.admin.utils.cache import user_cache_manager
 from backend.common.exception import errors
 from backend.common.pagination import paging_data
+from backend.common.validation import require_complete_ids
 
 
 class DataScopeService:
@@ -30,9 +31,7 @@ class DataScopeService:
         :return:
         """
 
-        data_scope = await data_scope_dao.get(db, pk)
-        if not data_scope:
-            raise errors.NotFoundError(msg='数据范围不存在')
+        data_scope = errors.require_found(await data_scope_dao.get(db, pk), msg='数据范围不存在')
         return data_scope
 
     @staticmethod
@@ -57,9 +56,7 @@ class DataScopeService:
         :return:
         """
 
-        data_scope = await data_scope_dao.get_join(db, pk)
-        if not data_scope:
-            raise errors.NotFoundError(msg='数据范围不存在')
+        data_scope = errors.require_found(await data_scope_dao.get_join(db, pk), msg='数据范围不存在')
         return data_scope
 
     @staticmethod
@@ -99,9 +96,7 @@ class DataScopeService:
         :param obj: 数据范围更新参数
         :return:
         """
-        data_scope = await data_scope_dao.get(db, pk)
-        if not data_scope:
-            raise errors.NotFoundError(msg='数据范围不存在')
+        data_scope = errors.require_found(await data_scope_dao.get(db, pk), msg='数据范围不存在')
         if data_scope.name != obj.name and await data_scope_dao.get_by_name(db, obj.name):
             raise errors.ConflictError(msg='数据范围已存在')
         count = await data_scope_dao.update(db, pk, obj)
@@ -118,13 +113,10 @@ class DataScopeService:
         :param rule_ids: 规则 ID 列表
         :return:
         """
-        data_scope = await data_scope_dao.get(db, pk)
-        if not data_scope:
-            raise errors.NotFoundError(msg='数据范围不存在')
+        data_scope = errors.require_found(await data_scope_dao.get(db, pk), msg='数据范围不存在')
         if rule_ids.rules:
             rules = await data_rule_dao.get_all_by_ids(db, list(set(rule_ids.rules)))
-            if {rule.id for rule in rules} != set(rule_ids.rules):
-                raise errors.NotFoundError(msg='数据规则不存在')
+            require_complete_ids(rules, rule_ids.rules, msg='数据规则不存在')
         count = await data_scope_dao.update_rules(db, pk, rule_ids)
         await user_cache_manager.clear_by_data_scope_id(db, [pk])
         return count

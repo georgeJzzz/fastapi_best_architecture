@@ -1,14 +1,11 @@
-import json
-import uuid
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.exception import errors
 from backend.core.conf import settings
-from backend.database.redis import redis_client
 from backend.plugin.oauth2.crud.crud_user_social import user_social_dao
-from backend.plugin.oauth2.enums import UserSocialAuthType, UserSocialType
+from backend.plugin.oauth2.enums import UserSocialType
 from backend.plugin.oauth2.schema.user_social import CreateUserSocialParam
+from backend.plugin.oauth2.service.oauth2_state_service import oauth2_state_service
 
 
 class UserSocialService:
@@ -67,13 +64,7 @@ class UserSocialService:
 
     @staticmethod
     async def get_binding_auth_url(*, user_id: int, source: UserSocialType) -> str:
-        state = str(uuid.uuid4())
-
-        await redis_client.set(
-            f'{settings.OAUTH2_STATE_REDIS_PREFIX}:{state}',
-            json.dumps({'type': UserSocialAuthType.binding.value, 'user_id': user_id}),
-            ex=settings.OAUTH2_STATE_EXPIRE_SECONDS,
-        )
+        state = await oauth2_state_service.create_binding(user_id=user_id)
 
         match source:
             case UserSocialType.github:

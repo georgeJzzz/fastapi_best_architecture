@@ -3,8 +3,7 @@ from collections.abc import Callable
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.conf import settings
-from backend.plugin.core import check_plugin_installed
-from backend.utils.serializers import select_list_serialize
+from backend.plugin import plugin_features
 
 
 def _to_bool(value: str) -> bool:
@@ -27,22 +26,11 @@ async def _load_config(
     :param status_key: 状态键
     :return:
     """
-    if not check_plugin_installed('config'):
+    configs = await plugin_features.config_values(db=db, config_type_attr=config_type_attr)
+    if configs is None:
         return
-
-    try:
-        from backend.plugin.config.enums import ConfigType
-        from backend.plugin.config.service.config_service import config_service
-    except ImportError as e:
-        raise ImportError('参数配置插件用法导入失败，请联系系统管理员') from e
-
-    config_type = getattr(ConfigType, config_type_attr)
-    dynamic_config = await config_service.get_all(db=db, type=config_type)
-    if not dynamic_config:
+    if not configs:
         return
-
-    config_list = select_list_serialize(dynamic_config) if hasattr(dynamic_config[0], '__table__') else dynamic_config
-    configs = {dc['key']: dc['value'] for dc in config_list}
     if configs.get(status_key, '1') == '0':
         return
 

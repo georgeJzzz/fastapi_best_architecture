@@ -20,9 +20,7 @@ class TaskResultService:
         :return:
         """
 
-        result = await task_result_dao.get(db, pk)
-        if not result:
-            raise errors.NotFoundError(msg='任务结果不存在')
+        result = errors.require_found(await task_result_dao.get(db, pk), msg='任务结果不存在')
         return result
 
     @staticmethod

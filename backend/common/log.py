@@ -112,8 +112,7 @@ def setup_logging() -> None:
 
 def set_custom_logfile() -> None:
     """设置自定义日志文件"""
-    if not os.path.exists(LOG_DIR):
-        os.mkdir(LOG_DIR)
+    os.makedirs(LOG_DIR, exist_ok=True)
 
     # 日志文件
     log_access_file = LOG_DIR / settings.LOG_ACCESS_FILENAME

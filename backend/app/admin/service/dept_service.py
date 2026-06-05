@@ -23,9 +23,7 @@ class DeptService:
         :return:
         """
 
-        dept = await dept_dao.get(db, pk)
-        if not dept:
-            raise errors.NotFoundError(msg='部门不存在')
+        dept = errors.require_found(await dept_dao.get(db, pk), msg='部门不存在')
         return dept
 
     @staticmethod
@@ -66,9 +64,7 @@ class DeptService:
         if dept:
             raise errors.ConflictError(msg='部门名称已存在')
         if obj.parent_id is not None:
-            parent_dept = await dept_dao.get(db, obj.parent_id)
-            if not parent_dept:
-                raise errors.NotFoundError(msg='父级部门不存在')
+            parent_dept = errors.require_found(await dept_dao.get(db, obj.parent_id), msg='父级部门不存在')
         await dept_dao.create(db, obj)
 
     @staticmethod
@@ -81,15 +77,11 @@ class DeptService:
         :param obj: 部门更新参数
         :return:
         """
-        dept = await dept_dao.get(db, pk)
-        if not dept:
-            raise errors.NotFoundError(msg='部门不存在')
+        dept = errors.require_found(await dept_dao.get(db, pk), msg='部门不存在')
         if dept.name != obj.name and await dept_dao.get_by_name(db, obj.name):
             raise errors.ConflictError(msg='部门名称已存在')
         if obj.parent_id:
-            parent_dept = await dept_dao.get(db, obj.parent_id)
-            if not parent_dept:
-                raise errors.NotFoundError(msg='父级部门不存在')
+            parent_dept = errors.require_found(await dept_dao.get(db, obj.parent_id), msg='父级部门不存在')
         if obj.parent_id == dept.id:
             raise errors.ForbiddenError(msg='禁止关联自身为父级')
         count = await dept_dao.update(db, pk, obj)
@@ -104,9 +96,7 @@ class DeptService:
         :param pk: 部门 ID
         :return:
         """
-        dept = await dept_dao.get_join(db, pk)
-        if not dept:
-            raise errors.NotFoundError(msg='部门不存在')
+        dept = errors.require_found(await dept_dao.get_join(db, pk), msg='部门不存在')
         if dept.users:
             raise errors.ConflictError(msg='部门下存在用户，无法删除')
         children = await dept_dao.get_children(db, pk)

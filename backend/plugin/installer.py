@@ -13,9 +13,7 @@ from starlette.concurrency import run_in_threadpool
 
 from backend.common.exception import errors
 from backend.common.log import log
-from backend.core.conf import settings
 from backend.core.path_conf import ENV_FILE_PATH, PLUGIN_DIR
-from backend.database.redis import redis_client
 from backend.plugin.requirements import install_requirements_async
 from backend.utils.locks import acquire_distributed_reload_lock
 from backend.utils.pattern_validate import is_git_url
@@ -123,7 +121,6 @@ async def install_zip_plugin(file: UploadFile | str) -> str:  # noqa: C901
 
         await _append_env_example(full_plugin_path)
         await install_requirements_async(plugin_name)
-        await redis_client.set(f'{settings.PLUGIN_REDIS_PREFIX}:changed', 'true')
 
     return plugin_name
 
@@ -152,7 +149,6 @@ async def install_git_plugin(repo_url: str) -> str:
 
         await _append_env_example(path)
         await install_requirements_async(repo_name)
-        await redis_client.set(f'{settings.PLUGIN_REDIS_PREFIX}:changed', 'true')
 
     return repo_name
 

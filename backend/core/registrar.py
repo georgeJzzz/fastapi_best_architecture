@@ -31,8 +31,7 @@ from backend.middleware.i18n_middleware import I18nMiddleware
 from backend.middleware.jwt_auth_middleware import JwtAuthMiddleware
 from backend.middleware.opera_log_middleware import OperaLogMiddleware
 from backend.middleware.state_middleware import StateMiddleware
-from backend.plugin.hooks import init_plugin_otel_hooks, register_plugin_hooks
-from backend.plugin.router import build_final_router
+from backend.plugin import plugin_lifecycle
 from backend.utils.demo_mode import demo_site
 from backend.utils.openapi import ensure_unique_route_names, simplify_operation_ids
 from backend.utils.serializers import MsgSpecJSONResponse
@@ -87,7 +86,7 @@ async def register_init(app: FastAPI) -> AsyncGenerator[None, None]:
         await redis_client.aclose()
 
 
-def register_app() -> FastAPI:
+def register_app(*, plugin_runtime: bool = True) -> FastAPI:
     """注册 FastAPI 应用"""
 
     app = FastAPI(
@@ -106,15 +105,16 @@ def register_app() -> FastAPI:
     register_socket_app(app)
     register_static_file(app)
     register_middleware(app)
-    register_router(app)
+    register_router(app, plugin_runtime=plugin_runtime)
     register_page(app)
     register_exception(app)
 
     # 注册插件钩子
-    register_plugin_hooks(app)
+    if plugin_runtime:
+        plugin_lifecycle.register_hooks(app)
 
     if settings.GRAFANA_METRICS_ENABLE:
-        register_metrics(app)
+        register_metrics(app, plugin_runtime=plugin_runtime)
 
     return app
 
@@ -193,7 +193,7 @@ def register_middleware(app: FastAPI) -> None:
         )
 
 
-def register_router(app: FastAPI) -> None:
+def register_router(app: FastAPI, *, plugin_runtime: bool = True) -> None:
     """
     注册路由
 
@@ -203,7 +203,11 @@ def register_router(app: FastAPI) -> None:
     dependencies = [Depends(demo_site)] if settings.DEMO_MODE else None
 
     # API
-    router = build_final_router()
+    if plugin_runtime:
+        router = plugin_lifecycle.build_router()
+    else:
+        from backend.app.router import router
+
     app.include_router(router, dependencies=dependencies)
 
     # Extra
@@ -239,7 +243,7 @@ def register_socket_app(app: FastAPI) -> None:
     app.mount('/ws', socket_app)
 
 
-def register_metrics(app: FastAPI) -> None:
+def register_metrics(app: FastAPI, *, plugin_runtime: bool = True) -> None:
     """
     注册指标
 
@@ -250,4 +254,5 @@ def register_metrics(app: FastAPI) -> None:
     app.mount(settings.GRAFANA_METRICS_PATH, metrics_app)
 
     init_otel(app)
-    init_plugin_otel_hooks(app)
+    if plugin_runtime:
+        plugin_lifecycle.init_otel_hooks(app)
